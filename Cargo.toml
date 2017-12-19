@@ -1,0 +1,10 @@
+[package]
+name = "youdao-cli"
+version = "0.1.0"
+authors = ["xjw0914 <contactxjw@gmail.com>"]
+
+[dependencies]
+clap = "2.29.0"
+curl = "0.4.8"
+rand = "0.3"
+rust-crypto = "^0.2"
