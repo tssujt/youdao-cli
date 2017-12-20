@@ -7,14 +7,14 @@ use std::io::{stdout, Write};
 
 use clap::{Arg, App};
 use curl::easy::Easy;
-use crypto::md5::Md5;
 use crypto::digest::Digest;
+use crypto::md5::Md5;
 
 const APP_KEY: &'static str = env!("YOUDAO_KEY");
 const APP_SECRET: &'static str = env!("YOUDAO_SECRET");
 const BASE_URL: &'static str = "https://openapi.youdao.com/api";
-const FROM: &'static str = "EN";
-const TO: &'static str = "zh-CHS";
+const DEFAULT_FROM: &'static str = "auto";
+const DEFAULT_TO: &'static str = "auto";
 
 fn main() {
     let matches = App::new("youdao-cli")
@@ -25,18 +25,35 @@ fn main() {
             .help("Sets the input word to translate")
             .required(true)
             .index(1))
+        .arg(Arg::with_name("from")
+            .short("f")
+            .long("from")
+            .value_name("FROM")
+            .help("Sets the source language")
+            .default_value(DEFAULT_FROM)
+            .takes_value(true))
+        .arg(Arg::with_name("to")
+            .short("t")
+            .long("to")
+            .value_name("TO")
+            .help("Sets the target language")
+            .default_value(DEFAULT_TO)
+            .takes_value(true))
         .get_matches();
 
     let mut easy = Easy::new();
     let q = matches.value_of("INPUT").unwrap();
-    easy.url(&build_url(q)).unwrap();
+    let from = matches.value_of("FROM").unwrap();
+    let to = matches.value_of("TO").unwrap();
+
+    easy.url(&build_url(q, from, to)).unwrap();
     easy.write_function(|data| {
         Ok(stdout().write(data).unwrap())
     }).unwrap();
     easy.perform().unwrap();
 }
 
-fn build_url(q: &str) -> String {
+fn build_url(q: &str, from: &str, to: &str) -> String {
     let salt = rand::random::<u8>();
     let mut sh = Md5::new();
     let input = format!("{}{}{}{}", APP_KEY, q, salt, APP_SECRET);
@@ -46,8 +63,8 @@ fn build_url(q: &str) -> String {
     format!(
         "{}?from={}&to={}&appKey={}&salt={}&q={}&sign={}",
         BASE_URL,
-        FROM,
-        TO,
+        from,
+        to,
         APP_KEY,
         salt,
         q,
